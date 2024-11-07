@@ -57,11 +57,7 @@ func (db *Db) SomeDatabaseQuery(request string) {
 		if combinedLatency.Milliseconds() > 1200 {
 			fmt.Printf("%s\t [TIMED OUT]\n", request)
 		} else {
-			if len(request) > 39 {
-				fmt.Printf("%s\t %d active requests\t latency: %v\n", request, count, latency)
-			} else {
-				fmt.Printf("%s\t\t %d active requests\t latency: %v\n", request, count, latency)
-			}
+			fmt.Printf("%s\t %d active requests\t latency: %v\n", request, count, latency)
 		}
 	}
 

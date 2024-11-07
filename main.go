@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"sync"
+	"time"
 )
 
 func main() {
@@ -24,11 +25,11 @@ func main() {
 			Binding: []Binding{
 				{
 					Topic:      "GopherConAU Day 2",
-					RoutingKey: "talks",
+					RoutingKey: "scheduled-talks",
 				},
 				{
 					Topic:      "GopherConAU Day 2",
-					RoutingKey: "afterparty",
+					RoutingKey: "afterparty-fun",
 				},
 			},
 			Consumer: Consumer{
@@ -40,23 +41,23 @@ func main() {
 			Binding: []Binding{
 				{
 					Topic:      "GopherConAU Day 1",
-					RoutingKey: "photos*",
-					//throttler:  NewIntervalThrottler(5*time.Second, 2*time.Second, 0.5),
+					RoutingKey: "photos-repo*",
+					throttler:  NewIntervalThrottler(5*time.Second, 2*time.Second, 0.5),
 				},
 				{
 					Topic:      "GopherConAU Day 1",
 					RoutingKey: "lost-and-found*",
-					//throttler:  NewBackoffThrottler(2*time.Second, 2*time.Second, 2, 8*time.Second),
+					throttler:  NewBackoffThrottler(2*time.Second, 2*time.Second, 2, 8*time.Second),
 				},
 				{
 					Topic:      "GopherConAU Day 1",
-					RoutingKey: "feedback*",
-					//throttler:  NewBlockThrottler(4*time.Second, 2*time.Second, 0.5),
+					RoutingKey: "feedback-form*",
+					throttler:  NewBlockThrottler(4*time.Second, 2*time.Second, 0.5),
 				},
 				{
 					Topic:      "GopherConAU Day 1",
 					RoutingKey: "discussions*",
-					//throttler:  NewBlockThrottler(4*time.Second, 2*time.Second, 0.5),
+					throttler:  NewBlockThrottler(4*time.Second, 2*time.Second, 0.5),
 				},
 			},
 			Consumer: Consumer{
@@ -68,23 +69,23 @@ func main() {
 			Binding: []Binding{
 				{
 					Topic:      "Workshop Day",
-					RoutingKey: "photos*",
-					//throttler:  NewIntervalThrottler(5*time.Second, 2*time.Second, 0.5),
+					RoutingKey: "photos-uploaded*",
+					throttler:  NewIntervalThrottler(5*time.Second, 2*time.Second, 0.5),
 				},
 				{
 					Topic:      "Workshop Day",
 					RoutingKey: "lost-and-found*",
-					//throttler:  NewBackoffThrottler(2*time.Second, 2*time.Second, 2, 8*time.Second),
+					throttler:  NewBackoffThrottler(2*time.Second, 2*time.Second, 2, 8*time.Second),
 				},
 				{
 					Topic:      "Workshop Day",
-					RoutingKey: "feedback*",
-					//throttler:  NewBlockThrottler(4*time.Second, 2*time.Second, 0.5),
+					RoutingKey: "feedback-form*",
+					throttler:  NewBlockThrottler(4*time.Second, 2*time.Second, 0.5),
 				},
 				{
 					Topic:      "Workshop Day",
-					RoutingKey: "discussions*",
-					//throttler:  NewBlockThrottler(4*time.Second, 2*time.Second, 0.5),
+					RoutingKey: "discussion-board*",
+					throttler:  NewBlockThrottler(4*time.Second, 2*time.Second, 0.5),
 				},
 			},
 			Consumer: Consumer{
