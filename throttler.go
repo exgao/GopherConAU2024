@@ -330,7 +330,6 @@ func (bo *Backoff) Apply(ctx context.Context) {
 	case <-ctx.Done():
 		return
 	case <-t.C:
-		fmt.Printf("backoff waited %s\n", d.String())
 		return
 	}
 }

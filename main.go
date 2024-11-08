@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"sync"
@@ -11,6 +12,7 @@ func main() {
 	fmt.Println("Hello, GopherConAU 2024!")
 	consumerWG := sync.WaitGroup{}
 
+	// [change 2] Structs can help clarify parameters
 	rm := NewResourceManager(70, 40)
 
 	db := NewDB(8)
@@ -85,7 +87,9 @@ func main() {
 				{
 					Topic:      "Workshop Day",
 					RoutingKey: "discussion-board*",
-					throttler:  NewBlockThrottler(4*time.Second, 2*time.Second, 0.5),
+					throttler: NewCustomThrottler(func(ctx context.Context) {
+						time.Sleep(2 * time.Second)
+					}),
 				},
 			},
 			Consumer: Consumer{

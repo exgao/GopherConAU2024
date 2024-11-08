@@ -6,12 +6,6 @@ import (
 	"time"
 )
 
-// HandlerFunc is a function type that outlines the structure
-// of every recipients' message handling logic
-//
-// It is invoked by the consumer to deliver the message
-type HandlerFunc func(message Message)
-
 type ResourceManager struct {
 	mu                  *sync.RWMutex
 	AlertChan           map[string]chan bool

@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"math/rand"
+	"strings"
 	"sync"
 	"time"
 )
@@ -48,17 +49,18 @@ func (db *Db) SomeDatabaseQuery(request string) {
 
 	extraLatency := time.Duration(0)
 	if timeSinceMax > 0 {
-		extraLatency = time.Duration(float64(timeSinceMax.Seconds())*2) * time.Second
+		latencyFactor := float64(2)
+		if !strings.Contains(request, "*") {
+			fmt.Printf("msg %s\n, factor %d", request, latencyFactor)
+			latencyFactor = 4
+		}
+		extraLatency = time.Duration(float64(timeSinceMax.Seconds())*latencyFactor) * time.Second
 	}
 	combinedLatency := latency + extraLatency
 	time.Sleep(combinedLatency)
 
 	if request != "" {
-		if combinedLatency.Milliseconds() > 1200 {
-			fmt.Printf("%s\t [TIMED OUT]\n", request)
-		} else {
-			fmt.Printf("%s\t %d active requests\t latency: %v\n", request, count, latency)
-		}
+		fmt.Printf("%s\t %d active requests\t latency: %v\n", request, count, latency)
 	}
 
 	db.mu.Lock()

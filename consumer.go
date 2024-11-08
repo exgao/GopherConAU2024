@@ -8,6 +8,8 @@ import (
 	"sync/atomic"
 )
 
+type HandlerFunc func(message Message)
+
 type Consumer struct {
 	wg *sync.WaitGroup
 
@@ -25,11 +27,15 @@ type Throttler interface {
 	CheckAndReset(alertVal bool)
 }
 
+// [change 1] Interfaces are your best friend
+// Accept interfaces, return concrete types
+
 func StartupConsumers(wg *sync.WaitGroup, queues []Queue, m *Messenger, rm *ResourceManager) error {
 	for _, queue := range queues {
 		m.DeclareQueue(queue.Name)
 
 		throttledBindings := []string{}
+		throttledMu := &sync.Mutex{}
 		for index, binding := range queue.Binding {
 			err := m.BindQueue(queue.Name, binding.Topic, binding.RoutingKey)
 			if err != nil {
@@ -58,7 +64,8 @@ func StartupConsumers(wg *sync.WaitGroup, queues []Queue, m *Messenger, rm *Reso
 
 			throttledBindings = append(throttledBindings, binding.RoutingKey)
 			secondaryConsumer := &Consumer{
-				Name:            fmt.Sprintf("%s-%d", secondaryQueueName, index),
+				Name: fmt.Sprintf("%s-%d", secondaryQueueName, index),
+				// [change 3] Keep it to yourself
 				Deliveries:      m.queues[secondaryQueueName],
 				wg:              wg,
 				alertActive:     newAtomicFalse(),
@@ -68,7 +75,7 @@ func StartupConsumers(wg *sync.WaitGroup, queues []Queue, m *Messenger, rm *Reso
 			wg.Add(1)
 
 			rm.AlertChan[secondaryConsumer.Name] = make(chan bool, 1)
-			go secondaryConsumer.ThrottleAndConsume(rm.AlertChan[secondaryConsumer.Name], binding.throttler)
+			go secondaryConsumer.ThrottleAndConsume(rm.AlertChan[secondaryConsumer.Name], binding.throttler, throttledMu)
 		}
 
 		c := &Consumer{
@@ -129,22 +136,23 @@ func (c *Consumer) Consume(alertChan <-chan bool, m *Messenger, throttleKeys []s
 	}
 }
 
-func (c *Consumer) ThrottleAndConsume(alertChan <-chan bool, throttler Throttler) {
+func (c *Consumer) ThrottleAndConsume(alertChan <-chan bool, throttler Throttler, workerMu *sync.Mutex) {
 	defer c.wg.Done()
 	processed := make(chan bool)
 	for {
+		workerMu.Lock()
+
 		ctx, cancel := context.WithCancel(context.Background())
 
 		go func() {
-			defer cancel()
 			select {
 			case <-processed:
-				cancel()
 			case alert := <-alertChan:
 				c.alertActive.Store(alert)
-				cancel()
 				<-processed
 			}
+			cancel()
+			workerMu.Unlock()
 		}()
 
 		d, ok := <-c.Deliveries
@@ -187,4 +195,29 @@ func newAtomicZero() *atomic.Int32 {
 	a.Store(0)
 
 	return a
+}
+
+// Custom throttler
+
+type customFunc func(ctx context.Context)
+
+type CustomThrottler struct {
+	throttleFunc customFunc
+}
+
+func NewCustomThrottler(f customFunc) *CustomThrottler {
+	return &CustomThrottler{
+		throttleFunc: f,
+	}
+}
+
+func (c *CustomThrottler) Validate() error {
+	return nil
+}
+
+func (c *CustomThrottler) Apply(ctx context.Context) {
+	c.throttleFunc(ctx)
+}
+
+func (c *CustomThrottler) CheckAndReset(alertVal bool) {
 }
